@@ -69,6 +69,12 @@ sizeof
 license.c
 deps
 
+# Test binaries
+tests/unit/test_*
+tests/security/test_protocol_security
+!tests/unit/test_*.c
+!tests/security/test_*.c
+
 # Editor and IDE
 *~
 .*~
