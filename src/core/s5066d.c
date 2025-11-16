@@ -553,7 +553,11 @@ int main(int argc, char** argv, char** env)
   if (pid_path) {
     int len;
     char buf[INTSTRLEN];
-    len = sprintf(buf, "%d", (int)getpid());
+    len = snprintf(buf, sizeof(buf), "%d", (int)getpid());
+    if (len < 0 || len >= sizeof(buf)) {
+      ERR("Failed to format PID: %d", (int)getpid());
+      exit(1);
+    }
     DD("pid_path=`%s'", pid_path);
     if (write_or_append_lock_c_path(pid_path, buf, len, "write pid", SEEK_SET, O_TRUNC) <= 0) {
       ERR("Failed to write PID file at `%s'. Check that all directories exist and that permissions allow dsproxy (pid=%d, euid=%d, egid=%d) to write the file. Disk could also be full or ulimit(1) too low. Continuing anyway.",
@@ -598,7 +602,11 @@ int main(int argc, char** argv, char** env)
   if (kidpid_path) {
     int len;
     char buf[INTSTRLEN];
-    len = sprintf(buf, "%d", (int)getpid());
+    len = snprintf(buf, sizeof(buf), "%d", (int)getpid());
+    if (len < 0 || len >= sizeof(buf)) {
+      ERR("Failed to format kidpid: %d", (int)getpid());
+      exit(1);
+    }
     if (write_or_append_lock_c_path(pid_path, buf, len, "write pid", SEEK_SET, O_TRUNC) <= 0) {
       ERR("Failed to write kidpid file at `%s'. Check that all directories exist and that permissions allow dsproxy (pid=%d, euid=%d, egid=%d) to write the file. Disk could also be full or ulimit(1) too low. Continuing anyway.",
 	  pid_path, getpid(), geteuid(), getegid());
