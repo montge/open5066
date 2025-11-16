@@ -64,6 +64,18 @@ endif()
 # Compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fmessage-length=0 -fno-strict-aliasing")
 
+# Link-Time Optimization (LTO) for better performance
+if(CMAKE_BUILD_TYPE MATCHES "Release|RelWithDebInfo")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_ERROR)
+    if(IPO_SUPPORTED)
+        message(STATUS "Link-Time Optimization (LTO) enabled")
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(STATUS "LTO not supported: ${IPO_ERROR}")
+    endif()
+endif()
+
 # Security flags (enabled by default for Release builds)
 set(SECURITY_FLAGS
     -Wall
