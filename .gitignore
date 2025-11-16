@@ -55,6 +55,18 @@ dkms.conf
 build/
 coverage/
 
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+*.cmake
+!CMakeLists.txt
+Makefile
+install_manifest.txt
+compile_commands.json
+
 # Coverage files
 *.gcda
 *.gcno
