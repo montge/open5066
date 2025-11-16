@@ -12,15 +12,48 @@ The Open5066 project now has a comprehensive test suite covering security, integ
 
 | Test Category | Count | Status | Pass Rate |
 |--------------|-------|--------|-----------|
+| Unit Tests | 8 | ✅ Passing | 100% |
 | Security Tests | 10 | ✅ Passing | 100% |
 | Integration Tests | 10 | ✅ Passing | 100% |
-| **Total** | **20** | **✅ All Passing** | **100%** |
+| **Total** | **28** | **✅ All Passing** | **100%** |
 
 ---
 
 ## Test Suite Overview
 
-### 1. Security Tests (`tests/security/test_protocol_security.c`)
+### 1. Unit Tests
+
+Unit tests verify individual components and protocol constants without external dependencies.
+
+#### test_protocol_basics.c (3 tests)
+**Purpose**: Validate protocol constants and basic data structures
+
+**Tests**:
+1. **test_sis_constants** - Verifies SIS protocol constants (MIN_PDU_SIZE=5, MAX_SAP_ID=16)
+2. **test_dts_constants** - Verifies DTS protocol constants (MIN_PDU_SIZE=6, SEG_SIZE=800)
+3. **test_preambles** - Validates protocol preamble values (SIS: 0x90 0xEB 0x00, DTS: 0x90 0xEB)
+
+**Location**: `tests/unit/test_protocol_basics.c`
+**Framework**: Unity
+**Runtime**: < 0.1 seconds
+
+#### test_crc_simple.c (5 tests)
+**Purpose**: Validate CRC calculation concepts and data structures
+
+**Tests**:
+1. **test_crc16_polynomial** - Verifies CRC-16 polynomial (0x9299 per STANAG 5066)
+2. **test_crc32_polynomial** - Verifies CRC-32 polynomial (0xf3a4e550 per STANAG 5066)
+3. **test_crc_sizes** - Validates CRC data type sizes (uint16_t=2, uint32_t=4)
+4. **test_polynomial_operations** - Tests XOR operations with polynomials
+5. **test_byte_extraction** - Validates byte extraction from multi-byte values
+
+**Location**: `tests/unit/test_crc_simple.c`
+**Framework**: Unity
+**Runtime**: < 0.1 seconds
+
+---
+
+### 2. Security Tests (`tests/security/test_protocol_security.c`)
 
 **Purpose**: Validate security features and protocol parser robustness
 
@@ -82,7 +115,7 @@ The Open5066 project now has a comprehensive test suite covering security, integ
 
 ---
 
-### 2. Integration Tests (`tests/integration/test_protocol_integration.sh`)
+### 3. Integration Tests (`tests/integration/test_protocol_integration.sh`)
 
 **Purpose**: Validate binary security features and protocol stack integration
 
