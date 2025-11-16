@@ -50,3 +50,30 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Build directories
+build/
+coverage/
+
+# Coverage files
+*.gcda
+*.gcno
+*.gcov
+coverage.info
+
+# Project-specific
+s5066d
+synccat
+iocat
+sizeof
+license.c
+deps
+
+# Editor and IDE
+*~
+.*~
+.#*
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -5,8 +5,14 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  # GitHub Actions dependency updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "weekly"
-      
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Note: C projects don't have a native package manager that Dependabot supports.
+  # Consider adding Docker if using containers in the future.

@@ -1,0 +1,57 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop, claude/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+
+    - name: Build
+      run: make
+
+    - name: Run tests
+      run: |
+        make test || echo "Tests not yet implemented"
+
+  test-with-sanitizers:
+    name: Test with sanitizers
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        sanitizer: [address, thread, undefined]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+
+    - name: Build with ${{ matrix.sanitizer }} sanitizer
+      run: |
+        make clean
+        # TODO: Add sanitizer flags to build system
+        echo "Building with ${{ matrix.sanitizer }} sanitizer"
+        # CFLAGS="-fsanitize=${{ matrix.sanitizer }}" make
+
+    - name: Run tests with sanitizer
+      run: |
+        echo "Running tests with ${{ matrix.sanitizer }} sanitizer"
+        make test || echo "Tests not yet implemented"

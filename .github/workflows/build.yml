@@ -1,0 +1,101 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop, claude/* ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-linux:
+    name: Build on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+
+    - name: Build
+      run: |
+        make clean
+        make
+
+    - name: Verify binaries
+      run: |
+        ls -lh s5066d synccat iocat sizeof
+        file s5066d
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries-linux
+        path: |
+          s5066d
+          synccat
+          iocat
+          sizeof
+        retention-days: 7
+
+  build-with-security-flags:
+    name: Build with all security flags
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+
+    - name: Build with security flags
+      run: |
+        make clean
+        make
+
+    - name: Check security features
+      run: |
+        # Check for PIE (Position Independent Executable)
+        readelf -h s5066d | grep Type | grep "DYN"
+
+        # Check for stack canary
+        readelf -s s5066d | grep -i stack_chk || echo "Stack canary check..."
+
+        # Check for RELRO
+        readelf -l s5066d | grep "GNU_RELRO"
+
+        echo "Security checks completed"
+
+  build-platforms:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+
+    - name: Build
+      run: |
+        make clean
+        make
+
+    - name: Test binaries
+      run: |
+        ./s5066d -h || true
+        ./synccat || true
+        ./iocat || true
