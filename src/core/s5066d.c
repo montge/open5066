@@ -419,7 +419,10 @@ void opt(int* argc, char*** argv, char*** env)
       case 'i': if ((*argv)[0][3] != 'd' || (*argv)[0][4]) break;
 	++(*argv); --(*argc);
 	if (!(*argc)) break;
-	sscanf((*argv)[0], "%i:%i", &drop_uid, &drop_gid);
+	if (sscanf((*argv)[0], "%i:%i", &drop_uid, &drop_gid) != 2) {
+	  fprintf(stderr, "Invalid uid:gid format: %s (expected uid:gid)\n", (*argv)[0]);
+	  break;
+	}
 	continue;
       }
       break;

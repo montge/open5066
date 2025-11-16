@@ -24,7 +24,17 @@ struct hi_pdu* http_encode_start(struct hi_thr* hit)
 void http_send_err(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int r, char* m)
 {
   struct hi_pdu* resp = http_encode_start(hit);
-  resp->len = sprintf(resp->m, "HTTP/1.0 %03d %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", r, m, strlen(m), m);
+  int max_size = resp->lim - resp->m;
+  int n = snprintf(resp->m, max_size, "HTTP/1.0 %03d %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s", r, m, (int)strlen(m), m);
+
+  /* Check for truncation */
+  if (n >= max_size) {
+    ERR("HTTP error response truncated: needed %d bytes, had %d", n, max_size);
+    resp->len = max_size - 1;  /* Truncated but null-terminated */
+  } else {
+    resp->len = n;
+  }
+
   hi_send(hit, io, req, resp);
 }
 
