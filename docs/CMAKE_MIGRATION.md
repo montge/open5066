@@ -1,5 +1,13 @@
 # CMake Migration Guide
 
+## ⚠️ IMPORTANT: CMake is the Primary Build System
+
+**The Open5066 project now uses CMake as its primary and recommended build system.**
+
+The old Makefiles (`Makefile` and `tests/Makefile`) are **deprecated** and kept only for backwards compatibility. They will be removed in a future version.
+
+**All new development should use CMake.**
+
 ## Overview
 
 The Open5066 project has been modernized with a CMake-based build system using **C17 standard**. This document describes the new build system, how to use it, and the benefits over the traditional Makefile approach.
@@ -7,10 +15,11 @@ The Open5066 project has been modernized with a CMake-based build system using *
 ## What Changed
 
 ### Build System
-- **Added CMake** (CMakeLists.txt) for cross-platform builds
+- **CMake is now PRIMARY** - The official, supported build system
 - **C Standard**: Now explicitly uses **C17** (ISO/IEC 9899:2018)
-- **Kept traditional Makefile** for backwards compatibility
+- **Old Makefiles DEPRECATED** - Kept only for backwards compatibility
 - **CTest Integration**: Tests are now integrated with CTest framework
+- **Better IDE Support**: CMake provides excellent IDE integration
 
 ### New Files
 - `CMakeLists.txt` - Root build configuration

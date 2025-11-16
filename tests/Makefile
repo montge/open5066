@@ -1,3 +1,16 @@
+################################################################################
+# DEPRECATED: This Makefile is deprecated
+#
+# Tests are now built and run using CMake/CTest:
+#
+#   cd build
+#   cmake ..
+#   make              # Builds all tests
+#   ctest             # Runs all tests
+#
+# See docs/CMAKE_MIGRATION.md for details.
+################################################################################
+
 # Test Makefile for Open5066
 # Uses Unity test framework
 

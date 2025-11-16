@@ -1,3 +1,18 @@
+################################################################################
+# DEPRECATED: This Makefile is deprecated and kept for backwards compatibility
+#
+# The project has migrated to CMake as the primary build system.
+# Please use CMake for new development:
+#
+#   mkdir build && cd build
+#   cmake ..
+#   make
+#   ctest
+#
+# See docs/CMAKE_MIGRATION.md for detailed migration guide.
+# This Makefile will be removed in a future version.
+################################################################################
+
 # Makefile  -  How to build NATO STANAG 5066 Annex A, B, and C daemon
 # Copyright (c) 2006 Sampo Kellomaki (sampo@iki.fi), All Rights Reserved.
 # See file COPYING.

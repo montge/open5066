@@ -22,11 +22,19 @@ The concrete embodiment is the `s5066d` daemon.
 
 ### Installation
 
+**Using CMake (Recommended):**
 ```bash
 git clone https://github.com/montge/open5066.git
 cd open5066
+mkdir build && cd build
+cmake ..
 make
 sudo make install
+```
+
+**Using legacy Makefile (Deprecated):**
+```bash
+make  # Old build system - see deprecation notice in Makefile
 ```
 
 ### Basic Usage
@@ -73,22 +81,49 @@ open5066/
 
 ## Building
 
-### Linux (Default)
+### Using CMake (Primary Build System)
+
+**Standard Build:**
 ```bash
-make              # Build for Linux
-make test         # Run tests
-make coverage     # Generate coverage report
+mkdir build && cd build
+cmake ..
+make                    # Build all targets
+ctest                   # Run all tests
 ```
 
-### Solaris 8
+**Build Types:**
 ```bash
-make TARGET=sol8  # Native Solaris 8 build
+cmake -DCMAKE_BUILD_TYPE=Release ..     # Optimized build with LTO
+cmake -DCMAKE_BUILD_TYPE=Debug ..       # Debug symbols
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo .. # Optimized + debug symbols
 ```
 
-### Cross-compilation
+**With Coverage:**
 ```bash
-PATH=/apps/gcc/sol8/bin:$PATH make TARGET=xsol8
+cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE=ON ..
+make
+ctest
+make coverage
 ```
+
+**With Sanitizers:**
+```bash
+cmake -DENABLE_SANITIZERS=ON ..
+make
+ctest
+```
+
+### Using Legacy Makefile (Deprecated)
+
+**⚠️ The Makefile build system is deprecated. Use CMake instead.**
+
+```bash
+make              # Build for Linux (deprecated)
+make test         # Run tests (deprecated)
+make coverage     # Generate coverage report (deprecated)
+```
+
+See docs/CMAKE_MIGRATION.md for migration guide.
 
 ## Development
 
@@ -106,9 +141,20 @@ We welcome contributions! Please see:
 
 ### Running Tests
 
+**With CMake/CTest (Recommended):**
 ```bash
-make test              # Run all tests
-make coverage          # Generate coverage report
+cd build
+ctest                         # Run all tests
+ctest -V                      # Verbose output
+ctest -L unit                 # Run only unit tests
+ctest -L integration          # Run only integration tests
+ctest --rerun-failed          # Rerun failed tests
+```
+
+**With legacy Makefile (Deprecated):**
+```bash
+make test              # Run all tests (deprecated)
+make coverage          # Generate coverage report (deprecated)
 ```
 
 ## Documentation
