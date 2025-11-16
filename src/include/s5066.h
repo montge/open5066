@@ -164,4 +164,11 @@ struct dts_conn {
 #define SMTP_GREET_DOMAIN "open5066.org"  /* *** config domain */
 #define SMTP_EHLO_CLI "Beautiful"
 
+/* Compile-time safety checks (C17 _Static_assert, zero runtime cost) */
+_Static_assert(SIS_MAX_PDU_SIZE <= 8192, "SIS PDU size must be reasonable");
+_Static_assert(SIS_MIN_PDU_SIZE == 5, "SIS minimum PDU size must be 5 bytes");
+_Static_assert(SIS_MAX_SAP_ID == 16, "SIS SAP ID must be 0-15");
+_Static_assert(DTS_SEG_SIZE <= 1024, "DTS segment size must fit in 10 bits");
+_Static_assert(SIS_BCAST_MTU <= 4096, "SIS broadcast MTU assumptions");
+
 #endif /* _s5066_h */

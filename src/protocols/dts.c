@@ -24,9 +24,10 @@
 #define DTS_SEG_C_PDU_SIZE(r, addr_size) ((DTS_SHB((r), (addr_size), 0) & 0x03) << 8 \
                                          | DTS_SHB((r), (addr_size), 1) & 0x00ff)
 
-/* From S5066 specification, Annex C, paragraph C.3.2.8, p. C-13. Not optimized. */
+/* From S5066 specification, Annex C, paragraph C.3.2.8, p. C-13.
+ * Made inline for performance (called per PDU) */
 
-unsigned short CRC_16_S5066(unsigned char DATA, unsigned short CRC)
+static inline unsigned short CRC_16_S5066(unsigned char DATA, unsigned short CRC)
 {
   unsigned char i, bit;
   for (i=0x01; i; i<<=1) {
@@ -38,7 +39,7 @@ unsigned short CRC_16_S5066(unsigned char DATA, unsigned short CRC)
   return CRC;
 }
 
-unsigned short CRC_16_S5066_batch(char* p, char* lim)
+static inline unsigned short CRC_16_S5066_batch(char* restrict p, char* restrict lim)
 {
   unsigned short CRC = 0;
   for (; p < lim; ++p)
@@ -46,7 +47,7 @@ unsigned short CRC_16_S5066_batch(char* p, char* lim)
   return CRC;
 }
 
-unsigned int CRC_32_S5066(unsigned char DATA, unsigned int CRC)
+static inline unsigned int CRC_32_S5066(unsigned char DATA, unsigned int CRC)
 {
   unsigned char i, bit;
   for (i=0x01; i; i<<=1) {
@@ -58,7 +59,7 @@ unsigned int CRC_32_S5066(unsigned char DATA, unsigned int CRC)
   return CRC;
 }
 
-unsigned int CRC_32_S5066_batch(char* p, char* lim)
+static inline unsigned int CRC_32_S5066_batch(char* restrict p, char* restrict lim)
 {
   unsigned int CRC = 0;
   for (; p < lim; ++p)
@@ -137,7 +138,7 @@ struct hi_pdu* dts_encode_start(struct hi_thr* hit, int op, int eow, char* to, i
   return resp;
 }
 
-void dts_send_uni_final(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, struct hi_pdu* resp, int seg_size, char* p)
+void dts_send_uni_final(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, struct hi_pdu* restrict resp, int seg_size, char* restrict p)
 {
   unsigned int data_crc32;
   /* Grab memory for  data CRC right after the header */
@@ -150,7 +151,7 @@ void dts_send_uni_final(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req
   hi_send3(hit, io, req, resp, resp->len, resp->m, seg_size, p, 4, resp->m + resp->len);
 }
 
-void dts_send_uni_nonarq_seg(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int len, char* d, int seg_size, char* p)
+void dts_send_uni_nonarq_seg(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int len, char* restrict d, int seg_size, char* p)
 {
   struct hi_pdu* resp;
   unsigned short hdr_crc16;
@@ -179,7 +180,7 @@ void dts_send_uni_nonarq_seg(struct hi_thr* hit, struct hi_io* io, struct hi_pdu
   dts_send_uni_final(hit, io, req, resp, seg_size, p);
 }
 
-void dts_send_uni_nonarq(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int len, char* d)
+void dts_send_uni_nonarq(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int len, char* restrict d)
 {
   char* lim = d + len;
   char* p = d;
@@ -191,7 +192,7 @@ void dts_send_uni_nonarq(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* re
   dts_send_uni_nonarq_seg(hit, io, req, len, d, lim-p, p);   /* Last segment */
 }
 
-void dts_send_uni_arq_seg(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int seg_size, char* p, int flags, int n_tx_seq)
+void dts_send_uni_arq_seg(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int seg_size, char* restrict p, int flags, int n_tx_seq)
 {
   struct hi_pdu* resp;
   unsigned short hdr_crc16;
@@ -249,7 +250,7 @@ int dts_expand_tx_window(struct hi_io* io)
   return n_tx_seq;
 }
 
-void dts_send_uni_arq(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int len, char* d)
+void dts_send_uni_arq(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int len, char* restrict d)
 {
   int n_tx_seq;
   char* lim = d + len;
@@ -284,7 +285,7 @@ void dts_send_uni_arq(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, 
 /* N.B. len and d MUST reflect a U_PDU, not a S_PDU and there must be 6 bytes of free space
  * available before d so C_PCI and S_PDU header can be added (at negative offsets). */
 
-void dts_send_uni(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int len, char* d)
+void dts_send_uni(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int len, char* restrict d)
 {
   int priority   = (d[-11] >> 4) & 0x0f;
   int dest_sap   = /*req->fe->ad.sap*/ d[-11] & 0x0f;  /* The two saps really should be same */
@@ -349,7 +350,7 @@ void dts_send_uni(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int 
  * c_pdus that need to be assembled and once complete, delivered
  * to the right SIS SAP. */
 
-int dts_data(struct hi_thr* hit, struct hi_pdu* req, int addr_size)
+int dts_data(struct hi_thr* hit, struct hi_pdu* restrict req, int addr_size)
 {
   struct hi_io* io;
   int i, c_pdu_id, c_pdu_size, c_pdu_offset, c_pdu_rx_win, u_len, sap;
@@ -506,7 +507,7 @@ int dts_data(struct hi_thr* hit, struct hi_pdu* req, int addr_size)
   return 0;
 }
 
-static int dts_process_hdr(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req,
+static int dts_process_hdr(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req,
 			   int addr_size, int hdr_size)
 {
   int size;

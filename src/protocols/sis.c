@@ -51,14 +51,14 @@ void sis_send_bind(struct hi_thr* hit, struct hi_io* io, int sap, int rank, int 
   hi_send(hit, io, 0, resp);
 }
 
-void sis_send_bind_rej(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int reason)
+void sis_send_bind_rej(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int reason)
 {
   struct hi_pdu* resp = sis_encode_start(hit, S_BIND_REJECTED, SPRIM_TLEN(bind_rejected));
   resp->m[6] = reason;
   hi_send(hit, io, req, resp);
 }
 
-void sis_send_bind_ok(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int sap, int mtu)
+void sis_send_bind_ok(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int sap, int mtu)
 {
   struct hi_pdu* resp = sis_encode_start(hit, S_BIND_ACCEPTED, SPRIM_TLEN(bind_accepted));
   resp->m[6] = (sap << 4) & 0xf0;
@@ -67,14 +67,14 @@ void sis_send_bind_ok(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, 
   hi_send(hit, io, req, resp);
 }
 
-void sis_send_unbind_ind(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req, int res)
+void sis_send_unbind_ind(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req, int res)
 {
   struct hi_pdu* resp = sis_encode_start(hit, S_UNBIND_INDICATION, SPRIM_TLEN(unbind_indication));
   resp->m[6] = res;
   hi_send(hit, io, req, resp);
 }
 
-void sis_send_uni_ok(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* req)
+void sis_send_uni_ok(struct hi_thr* hit, struct hi_io* io, struct hi_pdu* restrict req)
 {
   int size = MIN(sisconfirm_max, ntohs(((struct s_hdr*)req->m)->sprim.unidata_req.size_of_pdu));
   int len  = SPRIM_TLEN(unidata_req_confirm);
@@ -108,7 +108,7 @@ void sis_clean(struct hi_io* io)
 	(req)->fe->fd, (req)->op, (req)->len, SPRIM_TLEN(strct)); \
     return HI_CONN_CLOSE; } ME
 
-static int sis_bind(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_bind(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int sap, mtu;
   SIS_LEN_CHECK(req, bind_request);
@@ -146,7 +146,7 @@ static int sis_bind(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_unbind(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_unbind(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   SIS_LEN_CHECK(req, unbind_request);
   sis_clean(req->fe);
@@ -155,7 +155,7 @@ static int sis_unbind(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_bind_ok(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_bind_ok(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int sap, mtu;
   SIS_LEN_CHECK(req, bind_accepted);
@@ -166,7 +166,7 @@ static int sis_bind_ok(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_bind_rej(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_bind_rej(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int reason;
   SIS_LEN_CHECK(req, bind_rejected);
@@ -176,7 +176,7 @@ static int sis_bind_rej(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_unbind_ind(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_unbind_ind(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int reason;
   SIS_LEN_CHECK(req, bind_rejected);
@@ -186,7 +186,7 @@ static int sis_unbind_ind(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hle(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hle(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_establish);
@@ -199,7 +199,7 @@ static int sis_hle(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hlt(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hlt(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   SIS_LEN_CHECK(req, hard_link_terminate);
   /* *** decode address field */
@@ -208,7 +208,7 @@ static int sis_hlt(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hl_ok(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hl_ok(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int status, link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_established);
@@ -222,7 +222,7 @@ static int sis_hl_ok(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hl_rej(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hl_rej(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int reason, link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_rejected);
@@ -236,7 +236,7 @@ static int sis_hl_rej(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hlt_ok(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hlt_ok(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int reason, link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_terminated);
@@ -250,7 +250,7 @@ static int sis_hlt_ok(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hl_ind(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hl_ind(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int status, link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_indication);
@@ -264,7 +264,7 @@ static int sis_hl_ind(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hla(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hla(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_accept);
@@ -277,7 +277,7 @@ static int sis_hla(struct hi_thr* hit, struct hi_pdu* req)
   return 0;
 }
 
-static int sis_hlr(struct hi_thr* hit, struct hi_pdu* req)
+static int sis_hlr(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int reason, link_type, prio, sap;
   SIS_LEN_CHECK(req, hard_link_reject);
@@ -293,7 +293,7 @@ static int sis_hlr(struct hi_thr* hit, struct hi_pdu* req)
 
 /* Send unidata to DTS */
 
-int sis_uni(struct hi_thr* hit, struct hi_pdu* req)
+int sis_uni(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   int confirm, len, sap_id;
   SIS_LEN_CHECK2(req, unidata_req);
@@ -356,7 +356,7 @@ int sis_uni(struct hi_thr* hit, struct hi_pdu* req)
 
 /* Receive unidata from SIS */
 
-int sis_uni_ind(struct hi_thr* hit, struct hi_pdu* req)
+int sis_uni_ind(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   struct hi_io* io;
   int confirm, len, n_in_err, n_no_send, dest_sap;
@@ -434,7 +434,7 @@ int sis_uni_ind(struct hi_thr* hit, struct hi_pdu* req)
  * 1. In a router it should be forwarder to DTS layer
  * 2. In a SIS client it should cause the appropriate local action. */
 
-int sis_primitive(struct hi_thr* hit, struct hi_pdu* req)
+int sis_primitive(struct hi_thr* hit, struct hi_pdu* restrict req)
 {
   switch ((req->op = req->m[5])) {
   case S_BIND_REQUEST:              /* 0x01 */  return sis_bind(hit, req);
