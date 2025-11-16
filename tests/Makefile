@@ -20,7 +20,7 @@ SERIAL_SRC=$(SRC_DIR)/serial/globalcounter.c
 all: test
 
 # Build and run all tests
-test: unit
+test: unit integration security
 
 # Unit tests
 unit: $(UNIT_TEST_BINS)
@@ -39,7 +39,8 @@ unit/test_%: unit/test_%.c $(UNITY_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 integration:
-	@echo "Integration tests not yet implemented"
+	@echo "Running integration tests..."
+	@cd integration && ./test_protocol_integration.sh
 
 security: security/test_protocol_security
 	@echo "Running security tests..."
@@ -50,7 +51,7 @@ security/test_protocol_security: security/test_protocol_security.c $(UNITY_SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -f unit/test_* integration/test_* security/test_*
+	rm -f unit/test_* security/test_protocol_security
 	rm -f *.o
 
 help:
