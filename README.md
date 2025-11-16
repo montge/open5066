@@ -194,7 +194,18 @@ This software is designed for military and critical infrastructure use. We take 
 - **Main code**: GNU General Public License v2 (GPL-2)
 - **NATO C3 Agency components**: BSD-style license
 
-See [COPYING](COPYING) and [COPYING_sis5066_h](COPYING_sis5066_h) for details.
+### Using Open5066 in Commercial/Proprietary Software
+
+Open5066 can be legally integrated with proprietary software using several approaches:
+
+1. **Network Service Architecture** (recommended) - Run s5066d daemon, connect proprietary applications via TCP/IP
+2. **Internal Use Only** - Deploy internally without distribution
+3. **Commercial Support Model** - Offer services and support around GPL software
+4. **Separate Process Communication** - Use IPC mechanisms for clean separation
+
+**For detailed guidance**, see [GPL Compliance Guide](docs/GPL_COMPLIANCE.md)
+
+**License files**: [COPYING](COPYING) (GPL-2) and [COPYING_sis5066_h](COPYING_sis5066_h) (BSD)
 
 ## Credits
 
