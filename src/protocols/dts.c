@@ -375,6 +375,28 @@ int dts_data(struct hi_thr* hit, struct hi_pdu* req, int addr_size)
     c_pdu_size   = (DTS_SHB(req, addr_size, 3) << 8) & 0xff00 | DTS_SHB(req, addr_size, 4) & 0x0ff;
     c_pdu_offset = (DTS_SHB(req, addr_size, 5) << 8) & 0xff00 | DTS_SHB(req, addr_size, 6) & 0x0ff;
     c_pdu_rx_win = (DTS_SHB(req, addr_size, 7) << 8) & 0xff00 | DTS_SHB(req, addr_size, 8) & 0x0ff;
+
+    /* Validate c_pdu_id is within array bounds (12-bit field, max 4095) */
+    if (c_pdu_id < 0 || c_pdu_id >= 4096) {
+      ERR("Invalid c_pdu_id(%d) in DTS_NONARQ. fd(%x). Valid range: 0-4095",
+          c_pdu_id, req->fe->fd);
+      return 0;
+    }
+
+    /* Validate c_pdu_size is reasonable */
+    if (c_pdu_size > DTS_MAX_PDU_SIZE || c_pdu_size == 0) {
+      ERR("Invalid c_pdu_size(%d) in DTS_NONARQ. fd(%x). Valid range: 1-%d",
+          c_pdu_size, req->fe->fd, DTS_MAX_PDU_SIZE);
+      return 0;
+    }
+
+    /* Validate segment size is reasonable */
+    if (seg_size > DTS_SEG_SIZE || seg_size == 0) {
+      ERR("Invalid seg_size(%d) in DTS_NONARQ. fd(%x). Max allowed: %d",
+          seg_size, req->fe->fd, DTS_SEG_SIZE);
+      return 0;
+    }
+
     D("DTS_NONARQ seg_c_pdu_size(0x%x) flags(%x) c_pdu_id(%x) c_pdu_size(0x%x) c_pdu_seg_offset(0x%x) c_pdu_rx_win(0x%x)",
       seg_size, DTS_SHB(req, addr_size, 0), c_pdu_id, c_pdu_size, c_pdu_offset, c_pdu_rx_win);
     
@@ -426,8 +448,16 @@ int dts_data(struct hi_thr* hit, struct hi_pdu* req, int addr_size)
       }
     /* Hurrah! PDU is compete. Ship it to the SIS layer. First formulate SIS headers. */
     HEXDUMP("C_PDU: ", c_pdu, c_pdu + c_pdu_size, 500);
-    
+
     sap = c_pdu[2] & 0x0f; /* destination SAP ID */
+
+    /* Validate SAP ID before using as array index */
+    if (sap < 0 || sap >= SIS_MAX_SAP_ID) {
+      ERR("Invalid SAP ID(%d) in C_PDU. fd(%x). Valid range: 0-%d",
+          sap, req->fe->fd, SIS_MAX_SAP_ID - 1);
+      return 0;
+    }
+
     if (c_pdu[3] & 0x40) { /* TTD is present */
       h = pdu->m + 2;
       u_len = pdu->len - 6;
@@ -553,13 +583,21 @@ int dts_decode(struct hi_thr* hit, struct hi_io* io)
   unsigned int data_crc32;
   unsigned char* p_crc;
   struct hi_pdu* req = io->cur_pdu;
-  int n = req->ap - req->m;
-  
+  int n;
+
+  /* Validate pointers */
+  if (!req) {
+    ERR("Null PDU pointer in dts_decode. fd(%x)", io->fd);
+    return HI_CONN_CLOSE;
+  }
+
+  n = req->ap - req->m;
+
   if (n < DTS_MIN_PDU_SIZE) {   /* too little, need more */
     req->need = DTS_MIN_PDU_SIZE - n;
     return 0;
   }
-  
+
   if (req->m[0] != (char)0x90 || req->m[1] != (char)0xeb) { /* 16 bit Maury-Styles */
     ERR("Bad DTS PDU. fd(%x) need 0x90eb preamble", io->fd);
     HEXDUMP("bad preamble: ", req->m, req->m + DTS_MIN_PDU_SIZE, 50);
@@ -567,9 +605,23 @@ int dts_decode(struct hi_thr* hit, struct hi_io* io)
      * afterall, we are expecting an errorful channel. */
     return HI_CONN_CLOSE;
   }
-  
+
   addr_size = (req->m[5] >> 5) & 0x07;
   hdr_size = req->m[5] & 0x1f;
+
+  /* Validate address size (max 7 as per STANAG 5066) */
+  if (addr_size > 7) {
+    ERR("Invalid address size(%d) in DTS PDU. fd(%x). Max allowed: 7",
+        addr_size, io->fd);
+    return HI_CONN_CLOSE;
+  }
+
+  /* Validate header size is reasonable */
+  if (hdr_size > 31 || hdr_size < 4) {
+    ERR("Invalid header size(%d) in DTS PDU. fd(%x). Valid range: 4-31",
+        hdr_size, io->fd);
+    return HI_CONN_CLOSE;
+  }
   req->len = 2 + addr_size + hdr_size;
   if (n < req->len) {                    /* Need more to complete header */
     req->need = req->len - n;
@@ -592,7 +644,14 @@ int dts_decode(struct hi_thr* hit, struct hi_io* io)
     hi_free_req(hit, req);
     return 0;
   }
-   
+
+  /* Validate segment size is reasonable */
+  if (seg_c_pdu_size > DTS_MAX_PDU_SIZE || seg_c_pdu_size < 0) {
+    ERR("Invalid segment size(%d) in DTS PDU. fd(%x). Valid range: 0-%d",
+        seg_c_pdu_size, io->fd, DTS_MAX_PDU_SIZE);
+    return HI_CONN_CLOSE;
+  }
+
   req->len += seg_c_pdu_size + 4;
   if (n < req->len) {                    /* Need more to complete data */
     req->need = req->len - n;

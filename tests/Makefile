@@ -41,8 +41,13 @@ unit/test_%: unit/test_%.c $(UNITY_SRC)
 integration:
 	@echo "Integration tests not yet implemented"
 
-security:
-	@echo "Security tests not yet implemented"
+security: security/test_protocol_security
+	@echo "Running security tests..."
+	@./security/test_protocol_security
+
+security/test_protocol_security: security/test_protocol_security.c $(UNITY_SRC)
+	@echo "Building $@..."
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f unit/test_* integration/test_* security/test_*

@@ -112,7 +112,16 @@ static int sis_bind(struct hi_thr* hit, struct hi_pdu* req)
 {
   int sap, mtu;
   SIS_LEN_CHECK(req, bind_request);
+
+  /* Validate SAP ID is within bounds */
   sap = ((struct s_hdr*)req->m)->sprim.bind_request.sap_id;
+  if (sap < 0 || sap >= SIS_MAX_SAP_ID) {
+    ERR("Invalid SAP ID(%d) in bind request. fd(%x). Valid range: 0-%d",
+        sap, req->fe->fd, SIS_MAX_SAP_ID - 1);
+    sis_send_bind_rej(hit, req->fe, req, INVALID_SAP_ID);
+    return 0;
+  }
+
   LOCK(saptab_mut, "bind");
   if (saptab[sap].io) {
     UNLOCK(saptab_mut, "bind rej");
@@ -286,9 +295,26 @@ static int sis_hlr(struct hi_thr* hit, struct hi_pdu* req)
 
 int sis_uni(struct hi_thr* hit, struct hi_pdu* req)
 {
-  int confirm, len;
+  int confirm, len, sap_id;
   SIS_LEN_CHECK2(req, unidata_req);
+
+  /* Validate SAP ID */
+  sap_id = ((struct s_hdr*)req->m)->sprim.unidata_req.sap_id;
+  if (sap_id < 0 || sap_id >= SIS_MAX_SAP_ID) {
+    ERR("Invalid SAP ID(%d) in unidata_req. fd(%x). Valid range: 0-%d",
+        sap_id, req->fe->fd, SIS_MAX_SAP_ID - 1);
+    return HI_CONN_CLOSE;
+  }
+
   len = (req->m[SIS_MIN_PDU_SIZE + 10] << 8) & 0x00ff00 | req->m[SIS_MIN_PDU_SIZE + 11] & 0x00ff;
+
+  /* Validate length is reasonable */
+  if (len > SIS_BCAST_MTU) {
+    ERR("Invalid u_pdu length(%d) in unidata_req. fd(%x). Max allowed: %d",
+        len, req->fe->fd, SIS_BCAST_MTU);
+    return HI_CONN_CLOSE;
+  }
+
   if (len + SIS_MIN_PDU_SIZE + SIS_UNIHDR_SIZE != req->len) {
     ERR("Bad SIS PDU. fd(%x) u_data_len(%d) inconsistent with s_len(%d)",
 	req->fe->fd, len, req->len);
@@ -336,13 +362,57 @@ int sis_uni_ind(struct hi_thr* hit, struct hi_pdu* req)
   int confirm, len, n_in_err, n_no_send, dest_sap;
   char* d;
   SIS_LEN_CHECK2(req, unidata_ind);   /* *** need to handle different sized arq as well */
+
+  /* Validate destination SAP ID */
   dest_sap = ((struct s_hdr*)req->m)->sprim.unidata_ind.dest_sap_id;
+  if (dest_sap < 0 || dest_sap >= SIS_MAX_SAP_ID) {
+    ERR("Invalid dest SAP ID(%d) in unidata_ind. fd(%x). Valid range: 0-%d",
+        dest_sap, req->fe->fd, SIS_MAX_SAP_ID - 1);
+    return HI_CONN_CLOSE;
+  }
+
   len = (req->m[16] << 8) & 0xff00 | req->m[17] & 0x00ff;
   /*len = ((struct s_hdr*)req->m)->sprim.unidata_ind.size_of_u_pdu; *** struct access has some byte order problem */
+
+  /* Validate length is reasonable */
+  if (len > SIS_BCAST_MTU) {
+    ERR("Invalid u_pdu length(%d) in unidata_ind. fd(%x). Max allowed: %d",
+        len, req->fe->fd, SIS_BCAST_MTU);
+    return HI_CONN_CLOSE;
+  }
+
   d = req->m + SPRIM_TLEN(unidata_ind);
+
+  /* Validate we have enough data for error block count */
+  if (d + 2 > req->m + req->len) {
+    ERR("Insufficient data for error block count. fd(%x)", req->fe->fd);
+    return HI_CONN_CLOSE;
+  }
+
   n_in_err = (d[0] << 8) & 0xff00 | d[1] & 0x00ff;
+
+  /* Validate error block count doesn't cause overflow */
+  if (n_in_err > 1024 || d + 2 + 4 * n_in_err > req->m + req->len) {
+    ERR("Invalid error block count(%d). fd(%x)", n_in_err, req->fe->fd);
+    return HI_CONN_CLOSE;
+  }
+
   d += 2 + 4 * n_in_err;
+
+  /* Validate we have enough data for no-send block count */
+  if (d + 2 > req->m + req->len) {
+    ERR("Insufficient data for no-send block count. fd(%x)", req->fe->fd);
+    return HI_CONN_CLOSE;
+  }
+
   n_no_send = (d[0] << 8) & 0xff00 | d[1] & 0x00ff;
+
+  /* Validate no-send block count doesn't cause overflow */
+  if (n_no_send > 1024 || d + 2 + 4 * n_no_send > req->m + req->len) {
+    ERR("Invalid no-send block count(%d). fd(%x)", n_no_send, req->fe->fd);
+    return HI_CONN_CLOSE;
+  }
+
   d += 2 + 4 * n_no_send;
   
   if (d - req->m + len != req->len) {
@@ -408,8 +478,16 @@ int sis_decode(struct hi_thr* hit, struct hi_io* io)
 {
   int ret;
   struct hi_pdu* req = io->cur_pdu;
-  int n = req->ap - req->m;
-  
+  int n;
+
+  /* Validate pointers */
+  if (!req) {
+    ERR("Null PDU pointer in sis_decode. fd(%x)", io->fd);
+    return HI_CONN_CLOSE;
+  }
+
+  n = req->ap - req->m;
+
   if (n < SIS_MIN_PDU_SIZE) {   /* too little, need more */
     req->need = SIS_MIN_PDU_SIZE - n;
     return 0;
