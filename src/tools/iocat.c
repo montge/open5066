@@ -93,7 +93,7 @@ http://www.ing.iac.es:8080/~docs/external/serial/serial.html\n";
 #endif
 #include "serial_sync.h"
 #include "errmac.h"
-#include "serial/dialout.h"
+/* #include "serial/dialout.h" */  /* File not found, commented out */
 
 #ifndef PAREXT   /* Solaris specific */
 #define PAREXT 0
@@ -342,7 +342,7 @@ int main(int argc, char **argv) {
 	if (!strcmp(argv[argi], "-softcar")) {
 	  ++argi;
 	  if (argi >= argc) DIE("missing option argument", argi);
-	  sscanf(argv[argi], "%i", &n);
+	  if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid integer argument", argi);
 	  ret = ioctl(fd, TIOCSSOFTCAR, &n);
 	  if (ret == -1) IOERR("ioctl(TIOCSSOFTCAR)");
 	  continue;
@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
 	if (!strcmp(argv[argi], "-sbaud")) {
 	  ++argi;
 	  if (argi >= argc) DIE("missing option argument", argi);
-	  sscanf(argv[argi], "%i", &n);
+	  if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid baud rate", argi);
 	  ret = set_baud_rate(fd, port, n);
 	  if (ret == -1) IOERR("set_baud_rate()");
 	  continue;
@@ -362,7 +362,7 @@ int main(int argc, char **argv) {
 	if (!strcmp(argv[argi], "-sframe")) {
 	  ++argi;
 	  if (argi >= argc) DIE("missing option argument", argi);
-	  sscanf(argv[argi], "%i", &n);
+	  if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid frame size", argi);
 #ifdef SUNOS
 	  ret = ioctl(fd, S_IOCSETMRU, &n);
 #else
@@ -457,7 +457,7 @@ int main(int argc, char **argv) {
 	if (!strcmp(argv[argi], "-cmset")) {
 	  ++argi;
 	  if (argi >= argc) DIE("missing option argument", argi);
-	  sscanf(argv[argi], "%i", &n);
+	  if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid modem control value", argi);
 	  ret = ioctl(fd, TIOCMSET, &n);
 	  if (ret == -1) IOERR("ioctl(TIOCMSET)");
 	  continue;
@@ -612,10 +612,10 @@ int main(int argc, char **argv) {
 #if 0
       case 'e':	if (argv[argi][3]) break;
 	if (argi + 4 >= argc) DIE("missing option argument", argi);
-	sscanf(argv[argi+1], "%i", &abort_funcno);
-	sscanf(argv[argi+2], "%i", &abort_line);
-	sscanf(argv[argi+3], "%i", &abort_error_code);
-	sscanf(argv[argi+4], "%i", &abort_iter);
+	if (sscanf(argv[argi+1], "%i", &abort_funcno) != 1) DIE("invalid abort_funcno", argi);
+	if (sscanf(argv[argi+2], "%i", &abort_line) != 1) DIE("invalid abort_line", argi);
+	if (sscanf(argv[argi+3], "%i", &abort_error_code) != 1) DIE("invalid abort_error_code", argi);
+	if (sscanf(argv[argi+4], "%i", &abort_iter) != 1) DIE("invalid abort_iter", argi);
 	fprintf(stderr, "Will force core upon %x:%x err=%d iter=%d\n",
 		abort_funcno, abort_line, abort_error_code, abort_iter);
 	argi += 5;
@@ -656,7 +656,7 @@ int main(int argc, char **argv) {
       case '\0':
 	++argi;
 	if (argi >= argc) DIE("missing option argument", argi);
-	sscanf(argv[argi], "%i", &n);
+	if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid read size", argi);
 	if (n > sizeof(buf))
 	  DIE("read size exceeds internal buffer size", argi);
 	ret = read(fd, buf, n);
@@ -671,7 +671,7 @@ int main(int argc, char **argv) {
       case 'x':
 	++argi;
 	if (argi >= argc) DIE("missing option argument", argi);
-	sscanf(argv[argi], "%i", &n);
+	if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid read size", argi);
 	if (n > sizeof(buf))
 	  DIE("read size exceeds internal buffer size", argi);
 	ret = read(fd, buf, n);
@@ -688,7 +688,7 @@ int main(int argc, char **argv) {
       case 'd':
 	++argi;
 	if (argi >= argc) DIE("missing option argument", argi);
-	sscanf(argv[argi], "%i", &n);
+	if (sscanf(argv[argi], "%i", &n) != 1) DIE("invalid read size", argi);
 	if (n > sizeof(buf))
 	  DIE("read size exceeds internal buffer size", argi);
 	ret = read(fd, buf, n);
@@ -734,7 +734,7 @@ int main(int argc, char **argv) {
 	if (argi >= argc) DIE("missing option argument", argi);
 
 	for (n = 0; argv[argi][0] != '-' && n < sizeof(buf); ++n) {
-	  sscanf(argv[argi], "%i", &ret);
+	  if (sscanf(argv[argi], "%i", &ret) != 1) DIE("invalid byte value", argi);
 	  buf[n] = ret;
 	  ++argi;
 	  if (argi >= argc)
@@ -766,7 +766,7 @@ int main(int argc, char **argv) {
       case 'i': if (argv[argi][3] != 'd' || argv[argi][4]) break;
 	++argi;
 	if (argi >= argc) DIE("missing option argument", argi);
-	sscanf(argv[argi], "%i:%i", &drop_uid, &drop_gid);
+	if (sscanf(argv[argi], "%i:%i", &drop_uid, &drop_gid) != 2) DIE("invalid uid:gid format (expected uid:gid)", argi);
 	continue;
       case 's': if (NREST4('l','e','e','p')) break;
 	++argi;
@@ -841,6 +841,7 @@ int main(int argc, char **argv) {
       switch (n) {
       case -1: IOERR("read from fd");
       case 0:  D("EOF seen from fd(%d)", fd);
+	/* fall through */
       default:
 	DD("read %d chars", n);
 	printf("%.*s", n, buf);
@@ -850,6 +851,7 @@ int main(int argc, char **argv) {
       switch (n) {
       case -1: IOERR("read from stdin");
       case 0:  D("EOF seen from STDIN(%d)", STDIN_FILENO);
+	/* fall through */
       default:
 	n = write_all(fd, buf, n);
 	if (n == -1)
